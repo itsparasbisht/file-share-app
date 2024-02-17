@@ -13,6 +13,18 @@ app.use(express.json());
 
 const PORT = process.env.PORT;
 
+const admin = require("firebase-admin");
+const { Storage } = require("@google-cloud/storage");
+const serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  storageBucket: "gs://file-share-app-107b6.appspot.com",
+});
+
+const storage = new Storage();
+const bucket = storage.bucket(admin.storage().bucket().name);
+
 const upload = multer({ dest: "uploads" });
 
 mongoose.connection.on("open", function () {
@@ -52,7 +64,6 @@ app.post("/file/:id", async (req, res) => {
   const file = await File.findById(id);
 
   if (file.password) {
-    console.log(req.body, file.password);
     if (req.body?.password === undefined) {
       res.status(403).json({ message: "the file is password protected" });
       return;
@@ -71,6 +82,30 @@ app.post("/file/:id", async (req, res) => {
   file.downloadCount++;
   await file.save();
   res.download(file.path, file.originalName);
+});
+
+// Endpoint to generate a signed URL for direct upload
+app.get("/generate-upload-url", (req, res) => {
+  const fileName = req.query.fileName; // File name sent by the client
+
+  const file = bucket.file(fileName);
+
+  // Generate a signed URL for direct upload
+  file.getSignedUrl(
+    {
+      action: "write",
+      expires: Date.now() + 15 * 60 * 1000, // URL expires in 15 minutes
+      contentType: "image/jpeg", // Change to the appropriate content type
+    },
+    (err, url) => {
+      if (err) {
+        console.error("Error generating upload URL:", err);
+        return res.status(500).send("Error generating upload URL");
+      }
+
+      res.status(200).json({ uploadUrl: url });
+    }
+  );
 });
 
 app.listen(PORT, () => {
