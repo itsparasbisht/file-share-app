@@ -1,20 +1,15 @@
 const mongoose = require("mongoose");
 
 const File = new mongoose.Schema({
-  path: {
+  fileID: {
     type: String,
     required: true,
   },
-  originalName: {
+  filename: {
     type: String,
     required: true,
   },
   password: String,
-  downloadCount: {
-    type: Number,
-    required: true,
-    default: 0,
-  },
   uploadedAt: { type: Date, default: Date.now },
 });
 
