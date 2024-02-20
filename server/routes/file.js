@@ -16,7 +16,7 @@ admin.initializeApp({
 const storage = new Storage();
 const bucket = storage.bucket(admin.storage().bucket().name);
 
-// Endpoint to generate a signed URL for direct file upload
+// endpoint to generate a signed URL for direct file upload
 router.get("/generate-upload-url", (req, res) => {
   const fileID = uuidv4();
   const file = bucket.file(fileID);
@@ -38,6 +38,7 @@ router.get("/generate-upload-url", (req, res) => {
   );
 });
 
+// endpoint to make a db entry for uploaded file
 router.post("/post-upload", async (req, res) => {
   try {
     const fileData = {
@@ -75,12 +76,15 @@ async function retrieveFile(destinationPath) {
   }
 }
 
+// endpoint to download a file
 router.post("/:fileID", async (req, res) => {
   try {
     const fileID = req.params.fileID;
 
+    //get file details
     const file = await File.findOne({ fileID });
 
+    // if file is password protected, compare the passwords
     if (file.password) {
       if (req.body?.password === undefined) {
         res.status(403).json({ message: "the file is password protected" });
@@ -98,6 +102,7 @@ router.post("/:fileID", async (req, res) => {
       }
     }
 
+    //if password is correct download the file
     const destinationPath = `${fileID}`;
     const fileStream = await retrieveFile(destinationPath);
 
