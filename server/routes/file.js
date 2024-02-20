@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const bcrypt = require("bcrypt");
 const { v4: uuidv4 } = require("uuid");
 
 const admin = require("firebase-admin");
@@ -17,8 +18,8 @@ const bucket = storage.bucket(admin.storage().bucket().name);
 
 // Endpoint to generate a signed URL for direct file upload
 router.get("/generate-upload-url", (req, res) => {
-  const filename = req.query.filename;
-  const file = bucket.file(filename);
+  const fileID = uuidv4();
+  const file = bucket.file(fileID);
 
   file.getSignedUrl(
     {
@@ -32,7 +33,7 @@ router.get("/generate-upload-url", (req, res) => {
         return res.status(500).send("Error generating upload URL");
       }
 
-      res.status(200).json({ uploadUrl: url, fileID: uuidv4() });
+      res.status(200).json({ uploadUrl: url, fileID });
     }
   );
 });
@@ -45,7 +46,7 @@ router.post("/post-upload", async (req, res) => {
     };
 
     if (req.body.password !== undefined && req.body.password !== "") {
-      fileData.password = await bcrypt.hash(req.body.password, 10);
+      fileData.password = await bcrypt.hash(req.body.password.toString(), 10);
     }
 
     const file = await File.create(fileData);
@@ -58,6 +59,58 @@ router.post("/post-upload", async (req, res) => {
     res
       .status(500)
       .json({ message: "something went wrong", error: error.message });
+  }
+});
+
+// Function to retrieve a file from Firebase Storage
+async function retrieveFile(destinationPath) {
+  try {
+    const file = bucket.file(destinationPath);
+    const fileStream = await file.createReadStream();
+
+    return fileStream;
+  } catch (error) {
+    console.error("Error retrieving file:", error);
+    throw error;
+  }
+}
+
+router.post("/:fileID", async (req, res) => {
+  try {
+    const fileID = req.params.fileID;
+
+    const file = await File.findOne({ fileID });
+
+    if (file.password) {
+      if (req.body?.password === undefined) {
+        res.status(403).json({ message: "the file is password protected" });
+        return;
+      }
+
+      const passwordMatch = await bcrypt.compare(
+        req.body.password.toString(),
+        file.password
+      );
+
+      if (!passwordMatch) {
+        res.status(401).json({ message: "invalid password" });
+        return;
+      }
+    }
+
+    const destinationPath = `${fileID}`;
+    const fileStream = await retrieveFile(destinationPath);
+
+    res.setHeader("Content-Type", "application/octet-stream");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=${file.filename}`
+    );
+
+    fileStream.pipe(res);
+  } catch (error) {
+    console.error("Error downloading file:", error);
+    res.status(500).send("Error downloading file.");
   }
 });
 
