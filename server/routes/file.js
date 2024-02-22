@@ -55,6 +55,7 @@ router.post("/post-upload", async (req, res) => {
     res.json({
       filename: file.filename,
       fileID: file.fileID,
+      url: `${req.headers.origin}/${file.fileID}`,
     });
   } catch (error) {
     res
