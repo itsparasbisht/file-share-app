@@ -5,12 +5,12 @@ const { v4: uuidv4 } = require("uuid");
 
 const admin = require("firebase-admin");
 const { Storage } = require("@google-cloud/storage");
-const serviceAccount = require("../serviceAccount");
 const File = require("../models/File");
+const serviceAccount = require("../serviceAccount");
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  storageBucket: process.env.GOOGLE_BUCKET_NAME,
+  storageBucket: process.env.FIREBASE_BUCKET_NAME,
 });
 
 const storage = new Storage();
@@ -20,12 +20,13 @@ const bucket = storage.bucket(admin.storage().bucket().name);
 router.get("/generate-upload-url", (req, res) => {
   const fileID = uuidv4();
   const file = bucket.file(fileID);
+  const mimeType = "application/pdf";
 
   file.getSignedUrl(
     {
       action: "write",
       expires: Date.now() + 15 * 60 * 1000, // URL expires in 15 minutes
-      contentType: "image/jpeg",
+      contentType: mimeType,
     },
     (err, url) => {
       if (err) {

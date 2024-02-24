@@ -2,7 +2,6 @@ require("dotenv").config();
 require("./dbConnect");
 
 const express = require("express");
-const File = require("./models/File");
 const app = express();
 
 const fileRoute = require("./routes/file");
