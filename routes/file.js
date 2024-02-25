@@ -14,7 +14,10 @@ admin.initializeApp({
 });
 
 const storage = new Storage();
-const bucket = storage.bucket(admin.storage().bucket().name);
+const bucket = storage.bucket(admin.storage().bucket().name, {
+  origin: ["*"],
+  method: ["PUT"],
+});
 
 // endpoint to generate a signed URL for direct file upload
 router.get("/generate-upload-url", (req, res) => {
