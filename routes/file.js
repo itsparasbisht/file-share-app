@@ -20,7 +20,31 @@ const bucket = storage.bucket(admin.storage().bucket().name);
 router.get("/generate-upload-url", (req, res) => {
   const fileID = uuidv4();
   const file = bucket.file(fileID);
-  const mimeType = "application/pdf";
+  const fileType = req.query.fileType;
+
+  const allowedFileTypes = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "text/markdown",
+    "application/json",
+    "audio/mpeg",
+    "audio/wav",
+    "audio/ogg",
+    "text/plain",
+    "application/pdf",
+    "video/mp4",
+    "video/webm",
+    "video/ogg",
+  ];
+
+  let mimeType = "";
+
+  if (allowedFileTypes.includes(fileType)) {
+    mimeType = fileType;
+  } else {
+    return res.status(403).json({ message: "Selected file type not allowed" });
+  }
 
   file.getSignedUrl(
     {
@@ -31,7 +55,9 @@ router.get("/generate-upload-url", (req, res) => {
     (err, url) => {
       if (err) {
         console.error("Error generating upload URL:", err);
-        return res.status(500).send("Error generating upload URL");
+        return res
+          .status(500)
+          .json({ message: "Error in generating the upload URL" });
       }
 
       res.status(200).json({ uploadUrl: url, fileID });
@@ -61,7 +87,7 @@ router.post("/post-upload", async (req, res) => {
   } catch (error) {
     res
       .status(500)
-      .json({ message: "something went wrong", error: error.message });
+      .json({ message: "Something went wrong", error: error.message });
   }
 });
 
@@ -117,7 +143,7 @@ router.post("/:fileID", async (req, res) => {
     fileStream.pipe(res);
   } catch (error) {
     console.error("Error downloading file:", error);
-    res.status(500).send("Error downloading file.");
+    res.status(500).json({ message: "Error in downloading the file" });
   }
 });
 
