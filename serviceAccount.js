@@ -1,3 +1,3 @@
-const serviceAccount = require(process.env.FIREBASE_CREDS_FILE);
+const serviceAccount = require(process.env.GOOGLE_APPLICATION_CREDENTIALS);
 
 module.exports = serviceAccount;
