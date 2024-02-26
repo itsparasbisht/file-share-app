@@ -15,7 +15,7 @@ admin.initializeApp({
 
 const storage = new Storage();
 const bucket = storage.bucket(admin.storage().bucket().name, {
-  origin: ["*"],
+  origin: "*",
   method: ["PUT"],
 });
 
