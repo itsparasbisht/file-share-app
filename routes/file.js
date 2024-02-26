@@ -14,10 +14,26 @@ admin.initializeApp({
 });
 
 const storage = new Storage();
-const bucket = storage.bucket(admin.storage().bucket().name, {
-  origin: "*",
-  method: ["PUT"],
-});
+const bucket = storage.bucket(admin.storage().bucket().name);
+
+// storage bucket metadata setup
+const cors = [
+  {
+    origin: ["*"],
+    method: ["*"],
+    responseHeader: [
+      "Content-Type",
+      "Cache-Control",
+      "Expires",
+      "Last-Modified",
+      "Content-Disposition",
+    ],
+    maxAgeSeconds: 3600,
+  },
+];
+const metadata = { cors };
+bucket.setMetadata(metadata);
+// ------------------------
 
 // endpoint to generate a signed URL for direct file upload
 router.get("/generate-upload-url", (req, res) => {
