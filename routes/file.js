@@ -123,6 +123,22 @@ async function retrieveFile(destinationPath) {
   }
 }
 
+// endpoint to get filename bbased on fileID
+router.get("/:fileID", async (req, res) => {
+  try {
+    const fileID = req.params.fileID;
+    const file = await File.findOne({ fileID });
+
+    if (file) {
+      return res.status(200).json({ fileName: file.filename });
+    }
+    res.status(404).json({ message: "File doesn't exist" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 // endpoint to download a file
 router.post("/:fileID", async (req, res) => {
   try {
@@ -158,8 +174,6 @@ router.post("/:fileID", async (req, res) => {
       "Content-Disposition",
       `attachment; filename=${file.filename}`
     );
-
-    res.status(200).json({ fileName: file.filename });
 
     fileStream.pipe(res);
   } catch (error) {
