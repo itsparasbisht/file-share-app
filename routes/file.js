@@ -159,6 +159,8 @@ router.post("/:fileID", async (req, res) => {
       `attachment; filename=${file.filename}`
     );
 
+    res.status(200).json({ fileName: file.filename });
+
     fileStream.pipe(res);
   } catch (error) {
     console.error("Error downloading file:", error);
