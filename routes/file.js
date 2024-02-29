@@ -110,35 +110,6 @@ router.post("/post-upload", async (req, res) => {
   }
 });
 
-// Function to retrieve a file from Firebase Storage
-async function retrieveFile(destinationPath) {
-  try {
-    const file = bucket.file(destinationPath);
-    const fileStream = await file.createReadStream();
-
-    return fileStream;
-  } catch (error) {
-    console.error("Error retrieving file:", error);
-    throw error;
-  }
-}
-
-// endpoint to get filename bbased on fileID
-router.get("/:fileID", async (req, res) => {
-  try {
-    const fileID = req.params.fileID;
-    const file = await File.findOne({ fileID });
-
-    if (file) {
-      return res.status(200).json({ fileName: file.filename });
-    }
-    res.status(404).json({ message: "File doesn't exist" });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Internal server error" });
-  }
-});
-
 // endpoint to download a file
 router.post("/:fileID", async (req, res) => {
   try {
@@ -165,17 +136,30 @@ router.post("/:fileID", async (req, res) => {
       }
     }
 
-    //if password is correct download the file
+    // if password is correct generate download url for the file
     const destinationPath = `${fileID}`;
-    const fileStream = await retrieveFile(destinationPath);
 
-    res.setHeader("Content-Type", "application/octet-stream");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename=${file.filename}`
+    // Reference to the file you want to generate a download URL for
+    // const fileRef = storage.bucket().file(destinationPath);
+    const fileRef = bucket.file(destinationPath);
+
+    // Generate the download URL
+    fileRef.getSignedUrl(
+      {
+        action: "read",
+        expires: Date.now() + 15 * 60 * 1000, // URL expires in 15 minutes
+      },
+      (err, url) => {
+        if (err) {
+          console.error("Error generating download URL:", err);
+          return res
+            .status(500)
+            .json({ message: "Error in generating the download URL" });
+        }
+
+        res.status(200).json({ url, fileName: file.filename });
+      }
     );
-
-    fileStream.pipe(res);
   } catch (error) {
     console.error("Error downloading file:", error);
     res.status(500).json({ message: "Error in downloading the file" });
