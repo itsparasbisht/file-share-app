@@ -2,7 +2,10 @@ require("dotenv").config();
 require("./dbConnect");
 const cors = require("cors");
 
-const allowedOrigins = ["http://localhost:3000"];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "https://share-it-quick.netlify.app",
+];
 
 const express = require("express");
 const app = express();
